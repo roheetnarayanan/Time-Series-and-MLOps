@@ -5,4 +5,4 @@ statsmodels==0.13.5
 numpy
 math
 sklearn
-pmdarima==2.0.1
+
