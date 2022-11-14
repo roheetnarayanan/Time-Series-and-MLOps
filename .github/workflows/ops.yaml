@@ -13,7 +13,16 @@ jobs:
           REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           pip install -r requirement.txt
-          python train.py  # generate plot.png
+          python train.py  
           
-          echo "ARIMA METRICS"
-          cat arima_metrics.txt
+          echo "## ARIMA METRICS" > report.md
+          cat arima_metrics.txt >> report.md
+          echo "### ARIMA PREDICTIONS" >> report.md
+          cml-publish ARIMA_Preds.png --md >> report.md
+          
+          echo "## SARIMA METRICS" >> report.md
+          cat sarima_metrics.txt >> report.md
+          echo "### SARIMA PREDICTIONS" >> report.md
+          cml-publish sarima_pred.png --md >> report.md
+          
+          cml-send-comment report.md
