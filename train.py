@@ -1,275 +1,276 @@
-#!/usr/bin/env python
-# coding: utf-8
+    #!/usr/bin/env python
+    # coding: utf-8
 
-# In[1]:
+    # In[1]:
 
 
-import pandas as pd
-import numpy as np
-from statsmodels.graphics.tsaplots import acf, pacf, plot_acf, plot_pacf
-from pandas.plotting import lag_plot
-from statsmodels.tsa.seasonal import seasonal_decompose
-from statsmodels.tools.eval_measures import mse, rmse, meanabs
+    import pandas as pd
+    import numpy as np
+    from statsmodels.graphics.tsaplots import acf, pacf, plot_acf, plot_pacf
+    from pandas.plotting import lag_plot
+    from statsmodels.tsa.seasonal import seasonal_decompose
+    from statsmodels.tools.eval_measures import mse, rmse, meanabs
 
-import matplotlib.pyplot as plt
-from statsmodels.tsa.statespace.tools import diff
+    import matplotlib.pyplot as plt
+    from statsmodels.tsa.statespace.tools import diff
 
 
-# In[2]:
+    # In[2]:
 
 
-df = pd.read_csv("countries-aggregated.csv",parse_dates=True,index_col="Date")
-df = df[df["Country"]=="Germany"]
+    df = pd.read_csv("countries-aggregated.csv",parse_dates=True,index_col="Date")
+    df = df[df["Country"]=="Germany"]
 
 
-# ## Inspection
+    # ## Inspection
 
-# In[3]:
+    # In[3]:
 
 
-df["Confirmed"].plot()
-plt.title("Confirmed Covid Cases in Germany")
-plt.show()
+    df["Confirmed"].plot()
+    plt.title("Confirmed Covid Cases in Germany")
+    plt.show()
 
 
-# In[4]:
+    # In[4]:
 
 
-result = seasonal_decompose(df['Confirmed'], model='additive')  # model='add' also works
-fig = result.plot();
-fig.set_size_inches((12, 9))
+    result = seasonal_decompose(df['Confirmed'], model='additive')  # model='add' also works
+    fig = result.plot();
+    fig.set_size_inches((12, 9))
 
 
-# In[5]:
+    # In[5]:
 
 
-lag_plot(df["Confirmed"])
-plt.title("Lag Plot")
-plt.show()
+    lag_plot(df["Confirmed"])
+    plt.title("Lag Plot")
+    plt.show()
 
 
-# Strong indication of Autocorrelation
+    # Strong indication of Autocorrelation
 
-# In[6]:
+    # In[6]:
 
 
-plot_acf(df["Confirmed"],title="Autocorrelation of Confirmed Covid Cases",lags=50);
+    plot_acf(df["Confirmed"],title="Autocorrelation of Confirmed Covid Cases",lags=50);
 
 
-# In[7]:
+    # In[7]:
 
 
-plot_pacf(df["Confirmed"],title="Partial Autocorrelation of Confirmed Covid Cases",lags=10);
+    plot_pacf(df["Confirmed"],title="Partial Autocorrelation of Confirmed Covid Cases",lags=10);
 
 
-# ## Dickey-Fuller Test
+    # ## Dickey-Fuller Test
 
-# In[8]:
+    # In[8]:
 
 
-from statsmodels.tsa.stattools import adfuller
+    from statsmodels.tsa.stattools import adfuller
 
-def adf_test(series,title=''):
-    """
-    Pass in a time series and an optional title, returns an ADF report
-    """
-    print(f'Augmented Dickey-Fuller Test: {title}')
-    result = adfuller(series.dropna(),autolag='AIC') # .dropna() handles differenced data
-    
-    labels = ['ADF test statistic','p-value','# lags used','# observations']
-    out = pd.Series(result[0:4],index=labels)
+    def adf_test(series,title=''):
+        """
+        Pass in a time series and an optional title, returns an ADF report
+        """
+        print(f'Augmented Dickey-Fuller Test: {title}')
+        result = adfuller(series.dropna(),autolag='AIC') # .dropna() handles differenced data
 
-    for key,val in result[4].items():
-        out[f'critical value ({key})']=val
-        
-    print(out.to_string())          # .to_string() removes the line "dtype: float64"
-    
-    if result[1] <= 0.05:
-        print("Strong evidence against the null hypothesis")
-        print("Reject the null hypothesis")
-        print("Data has no unit root and is stationary")
-    else:
-        print("Weak evidence against the null hypothesis")
-        print("Fail to reject the null hypothesis")
-        print("Data has a unit root and is non-stationary")
+        labels = ['ADF test statistic','p-value','# lags used','# observations']
+        out = pd.Series(result[0:4],index=labels)
 
+        for key,val in result[4].items():
+            out[f'critical value ({key})']=val
 
-# In[9]:
+        print(out.to_string())          # .to_string() removes the line "dtype: float64"
 
+        if result[1] <= 0.05:
+            print("Strong evidence against the null hypothesis")
+            print("Reject the null hypothesis")
+            print("Data has no unit root and is stationary")
+        else:
+            print("Weak evidence against the null hypothesis")
+            print("Fail to reject the null hypothesis")
+            print("Data has a unit root and is non-stationary")
 
-adf_test(df["Confirmed"],title="Confirmed Covid Cases in Germany")
 
+    # In[9]:
 
-# As seen from the plot is the begining, the data is non-stationary and is seeing an exponential trend
 
-# ## Choosing ARIMA Parameters
+    adf_test(df["Confirmed"],title="Confirmed Covid Cases in Germany")
 
-# In[10]:
 
+    # As seen from the plot is the begining, the data is non-stationary and is seeing an exponential trend
 
-from pmdarima import auto_arima
+    # ## Choosing ARIMA Parameters
 
+    # In[10]:
 
-# In[11]:
 
+    from pmdarima import auto_arima
 
-stepwise_fit = auto_arima(df["Confirmed"], start_p=0, start_q=0,
-                          max_p=6, max_q=3, m=3,
-                          seasonal=True,
-                          d=None, trace=True,
-                          error_action='ignore',   #  if an order does not work
-                          suppress_warnings=True,  
-                          stepwise=True)  
 
+    # In[11]:
 
-# In[12]:
 
+    stepwise_fit = auto_arima(df["Confirmed"], start_p=0, start_q=0,
+                              max_p=6, max_q=3, m=3,
+                              seasonal=True,
+                              d=None, trace=True,
+                              error_action='ignore',   #  if an order does not work
+                              suppress_warnings=True,  
+                              stepwise=True)  
 
-stepwise_fit.summary()
 
+    # In[12]:
 
-# In[13]:
 
+    stepwise_fit.summary()
 
-df["diff_2"] = diff(df["Confirmed"],k_diff=2)
 
+    # In[13]:
 
-# In[14]:
 
+    df["diff_2"] = diff(df["Confirmed"],k_diff=2)
 
-adf_test(df["diff_2"])
 
+    # In[14]:
 
-# In[15]:
 
+    adf_test(df["diff_2"])
 
-plot_acf(df["diff_2"].dropna(),lags=10);
 
+    # In[15]:
 
-# In[16]:
 
+    plot_acf(df["diff_2"].dropna(),lags=10);
 
-plot_pacf(df["diff_2"].dropna(),lags=10);
 
+    # In[16]:
 
-# ## ARIMA
 
-# In[17]:
+    plot_pacf(df["diff_2"].dropna(),lags=10);
 
 
-from statsmodels.tsa.arima.model import ARIMA
+    # ## ARIMA
 
+    # In[17]:
 
-# In[18]:
 
+    from statsmodels.tsa.arima.model import ARIMA
 
-train = df["Confirmed"].iloc[: len(df)-30]
-test = df["Confirmed"].iloc[len(df)-30:]
 
+    # In[18]:
 
-# In[19]:
 
+    train = df["Confirmed"].iloc[: len(df)-30]
+    test = df["Confirmed"].iloc[len(df)-30:]
 
-model = ARIMA(train,order=(0,2,2))
-arima_results = model.fit()
-arima_results.summary()
 
+    # In[19]:
 
-# In[20]:
 
+    model = ARIMA(train,order=(0,2,2))
+    arima_results = model.fit()
+    arima_results.summary()
 
-start = len(train)
-end = len(train)+len(test)-1
-predictions = arima_results.predict(start=start,end=end,dynamic=False,typ="levels").rename("ARIMA (0,2,2) predictions")
 
+    # In[20]:
 
-# In[21]:
 
+    start = len(train)
+    end = len(train)+len(test)-1
+    predictions = arima_results.predict(start=start,end=end,dynamic=False,typ="levels").rename("ARIMA (0,2,2) predictions")
 
-predictions.plot()
-plt.plot(test,label="actauls")
-plt.legend()
-plt.savefig("ARIMA_Preds.png",dpi=120)
 
+    # In[21]:
 
-# In[22]:
 
+    predictions.plot()
+    plt.plot(test,label="actuals")
+    plt.legend()
+    plt.savefig("ARIMA_Preds.png",dpi=120)
+    plt.close()
 
-df["predictions"] = predictions
+    # In[22]:
 
 
-# In[23]:
+    df["predictions"] = predictions
 
 
-df = df.convert_dtypes()
+    # In[23]:
 
 
-# In[24]:
+    df = df.convert_dtypes()
 
 
-from sklearn.metrics import mean_absolute_error, mean_squared_error
-import math
+    # In[24]:
 
 
-# In[27]:
+    from sklearn.metrics import mean_absolute_error, mean_squared_error
+    import math
 
 
-mae = mean_absolute_error(test,predictions)
-rmse = math.sqrt(mean_squared_error(test,predictions))
-print("MAE is:",mae)
-print("RMSE is:",rmse)
+    # In[27]:
 
-with open("arima_metrics.txt","w") as op:
-    op.write("MAE of ARIMA is:  %2.1f%%\n"%mae)
-    op.write("RMSE ARIMA is:  %2.1f%%\n"%rmse)
-    
 
+    mae = mean_absolute_error(test,predictions)
+    rmse = math.sqrt(mean_squared_error(test,predictions))
+    print("MAE is:",mae)
+    print("RMSE is:",rmse)
 
-# ## SARIMA
+    with open("arima_metrics.txt","w") as op:
+        op.write("MAE of ARIMA is:  %2.1f%%\n"%mae)
+        op.write("RMSE ARIMA is:  %2.1f%%\n"%rmse)
 
-# In[28]:
 
 
-from statsmodels.tsa.statespace.sarimax import SARIMAX
+    # ## SARIMA
 
+    # In[28]:
 
-# In[29]:
 
+    from statsmodels.tsa.statespace.sarimax import SARIMAX
 
-model = SARIMAX(train,order=(0,2,2),seasonal_order=(2,0,2,3))
-sarima_results = model.fit()
-sarima_results.summary()
 
+    # In[29]:
 
-# In[30]:
 
+    model = SARIMAX(train,order=(0,2,2),seasonal_order=(2,0,2,3))
+    sarima_results = model.fit()
+    sarima_results.summary()
 
-predictions = sarima_results.predict(start=start,end=end,dynamic=False,typ="levels").rename("SARIMAX (0,2,2)(2,0,2,3) predictions")
 
+    # In[30]:
 
-# In[32]:
 
+    predictions = sarima_results.predict(start=start,end=end,dynamic=False,typ="levels").rename("SARIMAX (0,2,2)(2,0,2,3) predictions")
 
-predictions.plot()
-plt.plot(test,label="actuals")
-plt.legend()
-plt.savefig("sarima_pred.png",dpi=120)
 
+    # In[32]:
 
-# In[34]:
 
+    predictions.plot()
+    plt.plot(test,label="actuals")
+    plt.legend()
+    plt.savefig("sarima_pred.png",dpi=120)
+    plt.close()
 
-mae = mean_absolute_error(test,predictions)
-rmse = math.sqrt(mean_squared_error(test,predictions))
-print("MAE is:",mae)
-print("RMSE is:",rmse)
 
-with open("sarima_metrics.txt","w") as op:
-    op.write("MAE of SARIMA is:  %2.1f%%\n"%mae)
-    op.write("RMSE SARIMA is:  %2.1f%%\n"%rmse)
+    # In[34]:
 
 
-# In[ ]:
+    mae = mean_absolute_error(test,predictions)
+    rmse = math.sqrt(mean_squared_error(test,predictions))
+    print("MAE is:",mae)
+    print("RMSE is:",rmse)
+
+    with open("sarima_metrics.txt","w") as op:
+        op.write("MAE of SARIMA is:  %2.1f%%\n"%mae)
+        op.write("RMSE SARIMA is:  %2.1f%%\n"%rmse)
+
+
+    # In[ ]:
 
 
 
