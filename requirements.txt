@@ -1,8 +1,3 @@
 pandas
-sklearn
-matplotlib
-statsmodels==0.13.5
-numpy
-math
-sklearn
+
 
