@@ -2,6 +2,5 @@ pandas
 sklearn
 matplotlib
 statsmodels==0.13.5
-math
 sklearn
 pmdarima==2.0.1
