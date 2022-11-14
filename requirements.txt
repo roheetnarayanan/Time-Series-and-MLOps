@@ -3,5 +3,6 @@ sklearn
 matplotlib
 statsmodels==0.13.5
 numpy
-pmdarima==2.0.1
+math
 sklearn
+pmdarima==2.0.1
