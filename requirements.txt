@@ -1,8 +1,8 @@
 pandas
 sklearn
 matplotlib
-statsmodels
+statsmodels==0.13.5
 numpy
-pmdarima
+pmdarima==2.0.1
 sklearn
 math
